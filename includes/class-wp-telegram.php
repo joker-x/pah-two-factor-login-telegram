@@ -56,11 +56,22 @@ class WP_Telegram {
 
 	public function send( $msg, $chat_id ) {
 
-		$request = $this->make_request( "/sendMessage", array(
-			'chat_id' 		=> $chat_id,
-			'text'    		=> $msg,
-			'parse_mode'	=> 'HTML'
-		) );
+	    //Do not send empty messages
+		if ( empty($msg) || !is_numeric($chat_id)) {
+			return false;
+		}
+
+		$options = array(
+            'chat_id'               => $chat_id,
+            'text'                  => $msg,
+            'parse_mode'    => 'HTML'
+        );
+
+		if ( !empty($button_text) && !empty($url) ) {
+			$options['reply_markup'] = '{"inline_keyboard":[[{"text":"'.$button_text.'","url":"'.$url.'"}]]}';
+		}
+
+		$request = $this->make_request( "/sendMessage", $options);
 
 		if ( is_wp_error( $request ) ) {
 			$this->lastError = __( "Ooops! Server failure, try again!", "two-factor-login-telegram" );
@@ -79,6 +90,28 @@ class WP_Telegram {
 		return false;
 
 	}
+
+    public function set_webhook ( $url ) {
+
+		$request = $this->make_request( "/setWebhook", array(
+			'url'               => $url
+		) );
+
+		if ( is_wp_error( $request ) ) {
+			$this->lastError = __( "Ooops! Server failure, try again!", "two-factor-login-telegram" );
+                        return false;
+                }
+
+		$body = json_decode( wp_remote_retrieve_body( $request ) );
+
+		if ( $body->ok == 1 ) {
+			return true;
+		}
+
+		$this->lastError = sprintf( __( "%s (Error code %d)", $body->description, $body->error_code, "two-factor-login-telegram" ) );
+                return false;
+                
+	}	
 
 	/**
 	 * Set bot token
@@ -137,7 +170,7 @@ class WP_Telegram {
 		}
 
 
-		return $this->send( sprintf( __( "This is your access code: %s", "two-factor-login-telegram" ), $token ), $chat_id );
+		return $this->send( sprintf( __( "This is your access code: %s", "two-factor-login-telegram" ), "<code>".$token."</code>" ), $chat_id );
 	}
 
 	/**
