@@ -79,9 +79,8 @@ final class WP_Factor_Telegram_Plugin {
 	 * @return string
 	 */
 
-	private function get_auth_code( $length = 5 ) {
-		$pool = array_merge( range( 0, 9 ), range( 'a', 'z' ),
-			range( 'A', 'Z' ) );
+	private function get_auth_code( $length = 8 ) {
+		$pool = array_merge( range( 0, 9 ), range( 'a', 'z' );
 
 		$key = "";
 
