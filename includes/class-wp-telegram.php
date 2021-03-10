@@ -54,21 +54,28 @@ class WP_Telegram {
 	 * @return bool
 	 */
 
-	public function send( $msg, $chat_id ) {
+	public function send( $msg, $chat_id, $button_text="", $url="" ) {
 
-	    //Do not send empty messages
+		//Do not send empty messages
 		if ( empty($msg) || !is_numeric($chat_id)) {
 			return false;
 		}
 
 		$options = array(
-            'chat_id'               => $chat_id,
-            'text'                  => $msg,
-            'parse_mode'    => 'HTML'
-        );
+                        'chat_id'               => $chat_id,
+                        'text'                  => $msg,
+                        'parse_mode'    => 'HTML'
+                );
 
+//"reply_markup": {"inline_keyboard": [[{"text":"LaResistencia.co", "url": "http://laresistencia.co"}]]} }
 		if ( !empty($button_text) && !empty($url) ) {
-			$options['reply_markup'] = '{"inline_keyboard":[[{"text":"'.$button_text.'","url":"'.$url.'"}]]}';
+			//$buttons = array(array(
+			//$options['reply_markup'] = array( 'inline_keyboard' => array(array('text' => $button_text)));
+			//$options['reply_markup'] = '{"keyboard":[["¿Está vinculado mi teléfono?"]],"resize_keyboard":true}';
+
+			//if ( !empty($url) ) {
+				$options['reply_markup'] = '{"inline_keyboard":[[{"text":"'.$button_text.'","url":"'.$url.'"}]]}';
+			//}
 		}
 
 		$request = $this->make_request( "/sendMessage", $options);
@@ -91,12 +98,12 @@ class WP_Telegram {
 
 	}
 
-    public function set_webhook ( $url ) {
+	public function set_webhook ( $url ) {
 
 		$request = $this->make_request( "/setWebhook", array(
 			'url'               => $url
 		) );
-
+		
 		if ( is_wp_error( $request ) ) {
 			$this->lastError = __( "Ooops! Server failure, try again!", "two-factor-login-telegram" );
                         return false;
@@ -110,7 +117,7 @@ class WP_Telegram {
 
 		$this->lastError = sprintf( __( "%s (Error code %d)", $body->description, $body->error_code, "two-factor-login-telegram" ) );
                 return false;
-                
+
 	}	
 
 	/**
@@ -168,7 +175,6 @@ class WP_Telegram {
 		if ( $chat_id === false ) {
 			$chat_id = get_user_meta( get_current_user_id(), "tg_wp_factor_chat_id" );
 		}
-
 
 		return $this->send( sprintf( __( "This is your access code: %s", "two-factor-login-telegram" ), "<code>".$token."</code>" ), $chat_id );
 	}

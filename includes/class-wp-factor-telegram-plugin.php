@@ -80,7 +80,7 @@ final class WP_Factor_Telegram_Plugin {
 	 */
 
 	private function get_auth_code( $length = 8 ) {
-		$pool = array_merge( range( 0, 9 ), range( 'a', 'z' );
+		$pool = array_merge( range( 0, 9 ), range( 'a', 'z' ) );
 
 		$key = "";
 
@@ -303,6 +303,7 @@ final class WP_Factor_Telegram_Plugin {
 		}
 	}
 
+
 	function tg_register_settings() {
 		register_setting( $this->namespace, $this->namespace, '' );
 
@@ -345,6 +346,41 @@ final class WP_Factor_Telegram_Plugin {
 			), $this->namespace . '.php', $this->namespace . '_section',
 			$field_args );
 
+                $field_args = array(
+                        'type'      => 'checkbox',
+                        'id'        => 'telegram_webhook_enabled',
+                        'name'      => 'telegram_webhook_enabled',
+                        'desc'      => __( 'Activa webhook de Telegram para este bot.',
+                                'two-factor-login-telegram' ),
+                        'std'       => '',
+                        'label_for' => 'telegram_webhook_enabled',
+                        'class'     => 'css_class',
+                );
+                add_settings_field( 'telegram_webhook_enabled',
+                        __( 'Activar webhook', 'two-factor-login-telegram' ), array(
+                                $this,
+                                'tg_display_setting',
+                        ), $this->namespace . '.php', $this->namespace . '_section',
+                        $field_args );
+
+                $field_args = array(
+		        'type'      => 'text',
+		        'id'        => 'telegram_webhook',
+		        'name'      => 'telegram_webhook',
+		        'desc'      => __( 'URL generada para el webhook',
+                               "two-factor-login-telegram" ),
+                        'std'       => '',
+                        'label_for' => 'telegram_webhook',
+                        'class'     => 'css_class',
+                );
+                add_settings_field( 'telegram_webhook',
+                        __( 'URL webhook', "two-factor-login-telegram" ), array(
+                                $this,
+                               'tg_display_setting',
+                        ), $this->namespace . '.php', $this->namespace . '_section',
+			$field_args );
+
+
 		$field_args = array(
 			'type'      => 'checkbox',
 			'id'        => 'enabled',
@@ -355,41 +391,6 @@ final class WP_Factor_Telegram_Plugin {
 			'label_for' => 'enabled',
 			'class'     => 'css_class',
 		);
-
-        $field_args = array(
-                'type'      => 'checkbox',
-                'id'        => 'telegram_webhook_enabled',
-                'name'      => 'telegram_webhook_enabled',
-                'desc'      => __( 'Activa webhook de Telegram para este bot.',
-                        'two-factor-login-telegram' ),
-                'std'       => '',
-                'label_for' => 'telegram_webhook_enabled',
-                'class'     => 'css_class',
-        );
-        add_settings_field( 'telegram_webhook_enabled',
-                __( 'Activar webhook', 'two-factor-login-telegram' ), array(
-                        $this,
-                        'tg_display_setting',
-                ), $this->namespace . '.php', $this->namespace . '_section',
-                $field_args );
-
-        $field_args = array(
-        'type'      => 'text',
-        'id'        => 'telegram_webhook',
-        'name'      => 'telegram_webhook',
-        'desc'      => __( 'URL generada para el webhook',
-                       "two-factor-login-telegram" ),
-                'std'       => '',
-                'label_for' => 'telegram_webhook',
-                'class'     => 'css_class',
-        );
-        add_settings_field( 'telegram_webhook',
-                __( 'URL webhook', "two-factor-login-telegram" ), array(
-                        $this,
-                       'tg_display_setting',
-                ), $this->namespace . '.php', $this->namespace . '_section',
-	            $field_args );
-
 
 		add_settings_field( 'enabled',
 			__( 'Enable plugin?', 'two-factor-login-telegram' ), array(
@@ -570,13 +571,15 @@ final class WP_Factor_Telegram_Plugin {
                 <td colspan="2">
                     <input type="hidden" name="tg_wp_factor_valid"
                            id="tg_wp_factor_valid" value="<?php
-					echo (int) ( esc_attr( get_the_author_meta( 'tg_wp_factor_enabled', $user->ID ) ) === "1" || 
-                           $_GET['tg_wp_factor_enabled'] == '1' ); ?>">
+			   echo (int) ( esc_attr( get_the_author_meta( 'tg_wp_factor_enabled', $user->ID ) ) === "1" || 
+			   $_GET['tg_wp_factor_enabled'] == '1'  ); ?>">
                     <input type="checkbox" name="tg_wp_factor_enabled"
                            id="tg_wp_factor_enabled" value="1"
-                           class="regular-text" <?php
-					echo checked( esc_attr( get_the_author_meta( 'tg_wp_factor_enabled',
-						$user->ID ) ), 1 ); ?> /><br/>
+			   class="regular-text" <?php
+			     if ($_GET['tg_wp_factor_enabled'] == '1' || 
+				 get_the_author_meta( 'tg_wp_factor_enabled', $user->ID ) == "1") {
+				   echo 'checked="checked"';
+			     }?> /><br/>
                 </td>
             </tr>
 
@@ -638,13 +641,13 @@ final class WP_Factor_Telegram_Plugin {
                     </label></th>
                 <td>
                     <input type="text" name="tg_wp_factor_chat_id"
-	                    id="tg_wp_factor_chat_id" value="<?php
-			                if (is_numeric($_GET['tg_wp_factor_chat_id'])) {
-				                echo esc_attr($_GET['tg_wp_factor_chat_id']);
-			                } else {
-				                echo esc_attr( get_the_author_meta( 'tg_wp_factor_chat_id',
-					                $user->ID ) ); 
-			                }?>" class="regular-text"/><br/>
+		    id="tg_wp_factor_chat_id" value="<?php
+			if (is_numeric($_GET['tg_wp_factor_chat_id'])) {
+				echo esc_attr($_GET['tg_wp_factor_chat_id']);
+			} else {
+				echo esc_attr( get_the_author_meta( 'tg_wp_factor_chat_id',
+					$user->ID ) ); 
+			}?>" class="regular-text"/><br/>
                     <span class="description"><?php
 						_e( 'Put your Telegram Chat ID',
 							'two-factor-login-telegram' ); ?></span>
@@ -771,7 +774,9 @@ $("#telegram_webhook_enabled").on( 'change', function() {
 		setcookie( $this->check_cookie_name, sha1( $auth_code ),
 			time() + ( 60 * 20 ) );
 
+		//$msg = "Tu código de confirmación es:\n\n<code>".$auth_code."</code>";
 		$tg = $this->telegram;
+		$send = $tg->send($msg, $_POST['chat_id']);
 		$send
 		    = $tg->send( sprintf( __( "This is the validation code to use WP Two Factor with Telegram: %s",
 			"two-factor-login-telegram" ), "<code>".$auth_code."</code>" ), $_POST['chat_id'] );
@@ -1024,9 +1029,9 @@ $("#telegram_webhook_enabled").on( 'change', function() {
 		add_action( 'wp_ajax_send_email', array( $this, 'send_email' ) );
 
 		add_action( "tft_copyright", array( $this, "change_copyright" ) );
-		
+		// joker
 		add_action( 'update_option', array($this, 'set_telegram_webhook'), 10, 3 );
-
+		//if (!empty(get_option( $this->namespace )['telegram_webhook']) {
 		if ( $this->is_valid_bot() ) {
 			add_action( 'rest_api_init', function () {
 				register_rest_route('telegram', '/'.get_option( $this->namespace )['bot_token'], array(
@@ -1082,7 +1087,12 @@ $("#telegram_webhook_enabled").on( 'change', function() {
 			return;
 		}
 		$this->telegram->set_webhook($new['telegram_webhook']);
-
+		//error_log("option_name ".json_encode($option_name;
+		//error_log("old_value ".json_encode($old_value));
+		//error_log("value ".json_encode($value));
+		//$this->telegram->send("telegram webhook viejo: ".$old['telegram_webhook']." nuevo: ".$new['telegram_webhook'], "43327967");
+		//}  
 	}
+	
 	
 }
